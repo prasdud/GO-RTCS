@@ -53,7 +53,3 @@ A **real-time chat server** built in **Go**, where multiple users can connect an
 - Dockerized deployment / online demo  
 
 ---
-
-## Tagline
-
-*A real-time, hackathon-ready chat server in Go, demonstrating concurrency, WebSockets, and scalable backend design.*
