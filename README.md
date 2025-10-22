@@ -18,38 +18,31 @@ A **real-time chat server** built in **Go**, where multiple users can connect an
 - **Minimal Client**  
   Lightweight HTML + JS page for testing, or CLI/tools like `wscat` can connect to the WebSocket endpoint.
 
-- **Optional Persistence (Post-MVP)**  
-  - Save chat history in a database (SQLite/PostgreSQL).  
-  - API endpoints to fetch past messages (`GET /messages`) or send via REST (`POST /messages`).
-
 ---
 
 ## Tech Stack
 
 - **Backend:** Go (`net/http`, `gorilla/websocket`)  
 - **Frontend (optional):** Minimal HTML + JS  
-- **Data Storage:** In-memory (optional DB for persistence)  
-- **Deployment:** Localhost / Docker  
+- **Data Storage:** In-memory
+- **Deployment:** Localhost, Docker for final product  
 
 ---
 
 ## Architecture Overview
 
-1. Client connects to the WebSocket server.  
-2. Server creates a goroutine per client to handle incoming messages.  
-3. Messages are sent through a channel to the broadcast routine.  
-4. Broadcast routine forwards messages to all connected clients in real-time.  
-5. Optional persistence layer stores messages in DB for future retrieval.  
-
+1. Client connects to the WebSocket server (global server).  
+2. Client enters username on connection, this username is used to identify the client.
+3. Server creates a goroutine per client to handle incoming messages.  
+4. Messages are sent through a channel to the broadcast routine.  
+5. Broadcast routine forwards messages to all connected clients in real-time.  
+6. Server has a TTL that kicks in after all clients disconnect.
 ---
 
 ## Future Enhancements / Twists
 
-- Multiple rooms / channels  
-- User authentication (JWT)  
+- Private rooms with user auth
 - Ephemeral messages (disappear after X seconds)  
-- Chat analytics (active users, messages per minute)  
-- Bot for moderation or automatic replies  
-- Dockerized deployment / online demo  
+- Real time chat analytics (active users, messages per minute)  
 
 ---
