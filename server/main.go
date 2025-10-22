@@ -8,7 +8,10 @@ import (
 )
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true }, // Allow all origins
+	CheckOrigin:      func(r *http.Request) bool { return true }, // Allow all origins
+	HandshakeTimeout: 100000,
+	ReadBufferSize:   0, // buffer allcated by HTTP server used here
+	WriteBufferSize:  0,
 }
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
