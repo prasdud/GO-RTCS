@@ -1,10 +1,10 @@
 package main
 
 import (
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -12,9 +12,9 @@ import (
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin:      func(r *http.Request) bool { return true }, // Allow all origins
-	HandshakeTimeout: 100000,
-	ReadBufferSize:   0, // buffer allcated by HTTP server used here
-	WriteBufferSize:  0,
+	HandshakeTimeout: 10 * time.Second,
+	ReadBufferSize:   512, // buffer allocated by HTTP server used here
+	WriteBufferSize:  512,
 }
 
 var logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
@@ -31,42 +31,52 @@ var logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 	},
 }))
 
-// make this a thread-safe structure in production, or add mutex
-var connectedClients = []string{}
+var (
+	connectedClients = make(map[string]*websocket.Conn)
+	clientsMutex     sync.RWMutex
+)
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("Upgrade error:", err)
+		logger.Error("Upgrade error", "error", err)
 		return
 	}
 
 	// custom defer to track client disconnection
 	defer func() {
 		logger.Info("Client disconnected", "address", r.RemoteAddr)
-		//log.Printf("Client disconnected: %s", r.RemoteAddr)
-		connectedClients = connectedClients[:len(connectedClients)-1]
+
+		clientsMutex.Lock()
+		delete(connectedClients, r.RemoteAddr)
+		count := len(connectedClients)
+		clientsMutex.Unlock()
+
+		logger.Info("Total active clients", "count", count)
 		conn.Close()
 	}()
 
 	// Track connected client
 	currentClient := r.RemoteAddr
-	connectedClients = append(connectedClients, currentClient)
-	log.Printf("Client connected: %s", currentClient)
+	clientsMutex.Lock()
+	connectedClients[currentClient] = conn
+	count := len(connectedClients)
+	clientsMutex.Unlock()
+
+	logger.Info("Client connected", "address", currentClient, "total", count)
 
 	for {
 		// Read message from client (blocks until message received)
-		log.Printf("Total active clients: %d", len(connectedClients))
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
-			log.Println("Read error:", err)
+			logger.Error("Read error", "error", err)
 			break
 		}
-		log.Printf("Received: %s", msg)
+		logger.Info("Received message", "message", string(msg))
 
 		// Echo message back to client
 		if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
-			log.Println("Write error:", err)
+			logger.Error("Write error", "error", err)
 			break
 		}
 	}
@@ -74,6 +84,9 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/ws", wsHandler)
-	log.Println("WebSocket server started on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	logger.Info("WebSocket server started on :8080")
+
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		logger.Error("Server error", "error", err)
+	}
 }
