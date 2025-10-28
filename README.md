@@ -4,6 +4,14 @@ A **real-time chat server** built in **Go**, where multiple users can connect an
 
 ---
 
+## TODO
+- Add ping / pong heartbeat
+- set connection timeouts
+- set message size limits
+- implement graceful shutdown
+- use UUID instead of r.RemoteAddr
+- add error type checking
+
 ## Features (MVP)
 
 - **Real-Time Messaging**  
