@@ -108,18 +108,16 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		// acquire lock to broadcast message to all clients
 		// iterate through map of connected clients and send message
 		clientsMutex.Lock()
-		currentConn := connectedClients[clientId]
+		//currentConn := connectedClients[clientId]
 		for _, clientConn := range connectedClients {
-			if clientConn != currentConn {
-				msgBytes, err := json.Marshal(currentBroadcast)
-				if err != nil {
-					logger.Error("JSON marshal error", "error", err)
-					continue
-				}
-				if err := clientConn.WriteMessage(websocket.TextMessage, msgBytes); err != nil {
-					logger.Error("Broadcast error", "error", err)
-					break
-				}
+			msgBytes, err := json.Marshal(currentBroadcast)
+			if err != nil {
+				logger.Error("JSON marshal error", "error", err)
+				continue
+			}
+			if err := clientConn.WriteMessage(websocket.TextMessage, msgBytes); err != nil {
+				logger.Error("Broadcast error", "error", err)
+				break
 			}
 		}
 		clientsMutex.Unlock()
