@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -12,10 +13,10 @@ import (
 )
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin:      func(r *http.Request) bool { return true }, // Allow all origins
+	CheckOrigin:      func(r *http.Request) bool { return true }, // Allow all origins, change this before deployment
 	HandshakeTimeout: 10 * time.Second,
-	ReadBufferSize:   512, // buffer allocated by HTTP server used here
-	WriteBufferSize:  512,
+	ReadBufferSize:   1024, // buffer allocated by HTTP server used here
+	WriteBufferSize:  1024,
 }
 
 var logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
@@ -44,22 +45,25 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	const maxMessageSize = 50
+	conn.SetReadLimit(maxMessageSize)
+	clientId := uuid.New().String()
+
 	// custom defer to track client disconnection
 	defer func() {
-		logger.Info("Client disconnected", "address", r.RemoteAddr)
+		//logger.Info("Client disconnected", "address", clientId)
 
 		clientsMutex.Lock()
-		delete(connectedClients, r.RemoteAddr)
+		delete(connectedClients, clientId)
 		count := len(connectedClients)
 		clientsMutex.Unlock()
 
-		logger.Info("Total active clients", "count", count)
+		logger.Info("Total active clients", "total", count)
 		conn.Close()
 	}()
 
 	// Track connected client
 	//clientId := r.RemoteAddr
-	clientId := uuid.New().String()
 	clientsMutex.Lock()
 	connectedClients[clientId] = conn
 	count := len(connectedClients)
@@ -70,11 +74,25 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	for {
 		// Read message from client (blocks until message received)
 		_, msg, err := conn.ReadMessage()
+
 		if err != nil {
-			logger.Error("Read error", "error", err)
+			// Check for close errors and log gracefully
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+				logger.Error("Client disconnected", "address", clientId, "error", err)
+			} else {
+				logger.Info("Read error", "error", err)
+			}
 			break
 		}
-		logger.Info("Received message", "message", string(msg))
+
+		msgString := string(msg)
+
+		if len(strings.ReplaceAll(msgString, " ", "")) == 0 {
+			logger.Info("Empty message not allowed")
+			continue
+		}
+
+		logger.Info("Received message", "message", strings.TrimSpace(msgString))
 
 		// Echo message back to client
 		if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
