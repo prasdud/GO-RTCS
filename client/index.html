@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GO-RTCS WebSocket Client</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --neon-blue: #00f0ff;
+            --neon-blue-glow: 0 0 4px #00f0ff, 0 0 8px #00f0ff, 0 0 16px #00f0ff;
+            --bg-dark: #10131a;
+            --glass-bg: rgba(24, 28, 37, 0.55);
+            --glass-blur: blur(18px);
+            --glass-border: rgba(0,240,255,0.18);
+            --input-bg: rgba(24, 28, 37, 0.65);
+            --border: #22242a;
+        }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(135deg, #10131a 0%, #1a2333 100%);
+            color: var(--neon-blue);
+            font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', monospace;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            width: 100vw;
+            box-sizing: border-box;
+        }
+        h2 {
+            margin-top: 2.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            text-shadow: var(--neon-blue-glow);
+            text-align: center;
+        }
+        #messages {
+            width: 100vw;
+            flex: 1 1 auto;
+            background: var(--glass-bg);
+            border: 1.5px solid var(--glass-border);
+            border-radius: 18px 18px 0 0;
+            padding: 2em 1em 1em 1em;
+            min-height: 0;
+            max-height: calc(100vh - 4.5em - 3.5em);
+            height: 0;
+            overflow-y: auto;
+            margin-bottom: 0;
+            box-shadow: 0 8px 32px 0 #00f0ff22, 0 0 0 1.5px #00f0ff11 inset;
+            box-sizing: border-box;
+            transition: max-height 0.2s;
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+        }
+        .msg {
+            color: var(--neon-blue);
+            text-shadow: var(--neon-blue-glow);
+            font-size: 1.05em;
+            margin-bottom: 0.3em;
+            letter-spacing: 0.5px;
+            word-break: break-word;
+        }
+        .uuid {
+            font-size: 0.85em;
+            opacity: 0.7;
+            margin-right: 0.5em;
+            text-shadow: 0 0 2px #00f0ff, 0 0 4px #00f0ff;
+        }
+        em, .system {
+            color: #7defff;
+            opacity: 0.7;
+            font-size: 0.95em;
+        }
+        #input, #send {
+            font-family: inherit;
+            font-size: 1em;
+            padding: 0.8em 1.2em;
+            border-radius: 0;
+            border: 1px solid var(--border);
+            background: var(--input-bg);
+            color: var(--neon-blue);
+            outline: none;
+            margin-right: 0.5em;
+            box-shadow: 0 0 4px #00f0ff33 inset;
+            transition: border 0.2s;
+        }
+        #input:focus {
+            border: 1.5px solid var(--neon-blue);
+        }
+        #send {
+            cursor: pointer;
+            border: 1.5px solid var(--neon-blue);
+            background: transparent;
+            transition: background 0.2s;
+        }
+        #send:hover {
+            background: #00f0ff11;
+        }
+    </style>
+</head>
+<body>
+    <div style="position: fixed; top: 1.2em; right: 1.2em; z-index: 100; display: flex; align-items: center; gap: 0.7em;">
+        <span id="clock" style="font-family: inherit; font-size: 1.55em; color: var(--neon-blue); background: none; border: none; padding: 0; box-shadow: none; text-shadow: var(--neon-blue-glow), 0 0 8px var(--neon-blue); letter-spacing: 0.12em; user-select: none;"></span>
+    </div>
+    <h2>GO-RTCS WebSocket Client</h2>
+    <div id="messages"></div>
+    <div id="inputbar">
+        <input type="text" id="input" placeholder="Type a message..." autofocus />
+        <button id="send">Send</button>
+    </div>
+    <style>
+        #inputbar {
+            display: flex;
+            width: 100vw;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            background: var(--glass-bg);
+            border-top: 1.5px solid var(--glass-border);
+            padding: 0.5em 1em;
+            z-index: 10;
+            box-sizing: border-box;
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            box-shadow: 0 -2px 24px 0 #00f0ff22;
+        }
+        #inputbar input[type="text"] {
+            flex: 1;
+            min-width: 0;
+            background: rgba(0,0,0,0.18);
+            border: 1.5px solid var(--glass-border);
+            outline: none;
+            color: var(--neon-blue);
+            font-size: 1em;
+            padding: 0.8em 1.2em;
+            border-radius: 8px;
+            box-shadow: 0 0 8px #00f0ff22 inset;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            transition: border 0.2s, background 0.2s;
+        }
+        #inputbar input[type="text"]:focus {
+            border: 1.5px solid var(--neon-blue);
+            background: rgba(0,0,0,0.28);
+        }
+        #inputbar button {
+            font-family: inherit;
+            font-size: 1em;
+            padding: 0.8em 1.2em;
+            border-radius: 8px;
+            border: 1.5px solid var(--neon-blue);
+            background: rgba(0,0,0,0.18);
+            color: var(--neon-blue);
+            cursor: pointer;
+            margin-left: 0.5em;
+            box-shadow: 0 0 8px #00f0ff33 inset;
+            transition: background 0.2s, border 0.2s;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+        #inputbar button:hover {
+            background: #00f0ff33;
+            border: 1.5px solid #fff;
+        }
+        @media (max-width: 600px) {
+            h2 {
+                font-size: 1.1rem;
+                margin-top: 1.2rem;
+                margin-bottom: 0.7rem;
+            }
+            #messages {
+                padding: 1em 0.3em 0.5em 0.3em;
+                font-size: 0.98em;
+            }
+            #inputbar {
+                padding: 0.3em 0.3em;
+            }
+            #inputbar input[type="text"] {
+                font-size: 0.98em;
+                padding: 0.6em 0.7em;
+            }
+            #inputbar button {
+                font-size: 0.98em;
+                padding: 0.6em 0.7em;
+            }
+        }
+    </style>
+    <script>
+        // Local time clock
+        function updateClock() {
+            const now = new Date();
+            const pad = n => n.toString().padStart(2, '0');
+            const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            document.getElementById('clock').textContent = timeStr;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+        // Scroll messages to bottom on load and on resize
+        window.onload = function() {
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        };
+        window.onresize = function() {
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        };
+    </script>
+    <script>
+    const ws = new WebSocket('ws://' + location.hostname + ':8080/ws');
+        const messagesDiv = document.getElementById('messages');
+        const input = document.getElementById('input');
+        const sendBtn = document.getElementById('send');
+
+
+        ws.onopen = () => {
+            messagesDiv.innerHTML += '<div class="system"><em>Connected to server.</em></div>';
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                messagesDiv.innerHTML += `<div class="msg"><span class="uuid">${data.SenderUUID}:</span> ${escapeHtml(data.Message)}</div>`;
+            } catch (e) {
+                messagesDiv.innerHTML += `<div class="msg" style="color:#ff3c7d;text-shadow:0 0 4px #ff3c7d;">Invalid message: ${escapeHtml(event.data)}</div>`;
+            }
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        };
+
+        ws.onclose = () => {
+            messagesDiv.innerHTML += '<div class="system"><em>Disconnected from server.</em></div>';
+        };
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            return text.replace(/[&<>"']/g, function (c) {
+                return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\'':'&#39;'}[c]||c;
+            });
+        }
+
+        sendBtn.onclick = sendMessage;
+        input.onkeydown = (e) => { if (e.key === 'Enter') sendMessage(); };
+
+        function sendMessage() {
+            if (input.value.trim() !== '') {
+                ws.send(input.value);
+                input.value = '';
+            }
+        }
+    </script>
+</body>
+</html>
