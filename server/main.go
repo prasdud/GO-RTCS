@@ -92,13 +92,21 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		logger.Info("Received message", "message", strings.TrimSpace(msgString))
+		logger.Info("Received message", "message", strings.TrimSpace(msgString), "from", clientId)
 
-		// Echo message back to client
-		if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
-			logger.Error("Write error", "error", err)
-			break
+		// acquire lock to broadcast message to all clients
+		// iterate through map of connected clients and send message
+		clientsMutex.Lock()
+		currentConn := connectedClients[clientId]
+		for _, clientConn := range connectedClients {
+			if clientConn != currentConn {
+				if err := clientConn.WriteMessage(websocket.TextMessage, msg); err != nil {
+					logger.Error("Broadcast error", "error", err)
+					break
+				}
+			}
 		}
+		clientsMutex.Unlock()
 	}
 }
 
