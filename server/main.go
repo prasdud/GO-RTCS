@@ -42,6 +42,7 @@ var (
 type BroadcastMessage struct {
 	SenderUUID string
 	Message    string
+	Time       string
 }
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
@@ -103,6 +104,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		currentBroadcast := BroadcastMessage{
 			SenderUUID: clientId,
 			Message:    msgString,
+			Time:       time.Now().Format("15:04:05"),
 		}
 
 		// acquire lock to broadcast message to all clients

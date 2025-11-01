@@ -49,13 +49,14 @@
             border-radius: 18px 18px 0 0;
             padding: 2em 1em 1em 1em;
             min-height: 0;
-            max-height: calc(100vh - 4.5em - 3.5em);
-            height: 0;
+            /* Height minus input bar (approx 70px) and top margin (approx 60px) */
+            height: calc(100vh - 4.5em - 3.5em - 70px);
+            max-height: calc(100vh - 4.5em - 3.5em - 70px);
             overflow-y: auto;
             margin-bottom: 0;
             box-shadow: 0 8px 32px 0 #00f0ff22, 0 0 0 1.5px #00f0ff11 inset;
             box-sizing: border-box;
-            transition: max-height 0.2s;
+            transition: max-height 0.2s, height 0.2s;
             backdrop-filter: var(--glass-blur);
             -webkit-backdrop-filter: var(--glass-blur);
         }
@@ -66,6 +67,19 @@
             margin-bottom: 0.3em;
             letter-spacing: 0.5px;
             word-break: break-word;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1em;
+        .msg-time {
+            font-size: 0.92em;
+            color: var(--neon-blue);
+            opacity: 0.7;
+            margin-left: 1em;
+            text-shadow: 0 0 4px var(--neon-blue);
+            white-space: nowrap;
+            font-family: inherit;
+        }
         }
         .uuid {
             font-size: 0.85em;
@@ -224,7 +238,7 @@
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                messagesDiv.innerHTML += `<div class="msg"><span class="uuid">${data.SenderUUID}:</span> ${escapeHtml(data.Message)}</div>`;
+                messagesDiv.innerHTML += `<div class="msg"><span><span class="uuid">${data.SenderUUID}:</span> ${escapeHtml(data.Message)}</span><span class="msg-time">${escapeHtml(data.Time || '')}</span></div>`;
             } catch (e) {
                 messagesDiv.innerHTML += `<div class="msg" style="color:#ff3c7d;text-shadow:0 0 4px #ff3c7d;">Invalid message: ${escapeHtml(event.data)}</div>`;
             }
