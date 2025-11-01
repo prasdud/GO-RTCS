@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"os"
@@ -37,6 +38,11 @@ var (
 	connectedClients = make(map[string]*websocket.Conn)
 	clientsMutex     sync.RWMutex
 )
+
+type BroadcastMessage struct {
+	SenderUUID string
+	Message    string
+}
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -94,13 +100,23 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 		logger.Info("Received message", "message", strings.TrimSpace(msgString), "from", clientId)
 
+		currentBroadcast := BroadcastMessage{
+			SenderUUID: clientId,
+			Message:    msgString,
+		}
+
 		// acquire lock to broadcast message to all clients
 		// iterate through map of connected clients and send message
 		clientsMutex.Lock()
 		currentConn := connectedClients[clientId]
 		for _, clientConn := range connectedClients {
 			if clientConn != currentConn {
-				if err := clientConn.WriteMessage(websocket.TextMessage, msg); err != nil {
+				msgBytes, err := json.Marshal(currentBroadcast)
+				if err != nil {
+					logger.Error("JSON marshal error", "error", err)
+					continue
+				}
+				if err := clientConn.WriteMessage(websocket.TextMessage, msgBytes); err != nil {
 					logger.Error("Broadcast error", "error", err)
 					break
 				}

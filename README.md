@@ -9,6 +9,12 @@ A **real-time chat server** built in **Go**, where multiple users can connect an
 - set connection timeouts
 - add error type checking
 
+
+## Potential issues
+- Broadcast Logic:
+  The broadcast loop skips sending the message back to the sender, which is good. However, if a client connection fails during broadcast, you only log the error and break the loop. Consider removing dead connections from the map to avoid memory leaks.
+
+  
 ## Features (MVP)
 
 - **Real-Time Messaging**  
