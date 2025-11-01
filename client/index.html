@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>GO-RTCS WebSocket Client</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <style>
         :root {
             --neon-blue: #00f0ff;
@@ -41,6 +41,13 @@
             text-shadow: var(--neon-blue-glow);
             text-align: center;
         }
+        @media (max-width: 600px) {
+            h2 {
+                font-size: 1.1rem;
+                margin-top: 1.2rem;
+                margin-bottom: 0.7rem;
+            }
+        }
         #messages {
             width: 100vw;
             flex: 1 1 auto;
@@ -49,7 +56,6 @@
             border-radius: 18px 18px 0 0;
             padding: 2em 1em 1em 1em;
             min-height: 0;
-            /* Height minus input bar (approx 70px) and top margin (approx 60px) */
             height: calc(100vh - 4.5em - 3.5em - 70px);
             max-height: calc(100vh - 4.5em - 3.5em - 70px);
             overflow-y: auto;
@@ -59,6 +65,15 @@
             transition: max-height 0.2s, height 0.2s;
             backdrop-filter: var(--glass-blur);
             -webkit-backdrop-filter: var(--glass-blur);
+        }
+        @media (max-width: 600px) {
+            #messages {
+                padding: 1em 0.3em 0.5em 0.3em;
+                font-size: 1em;
+                border-radius: 10px 10px 0 0;
+                height: calc(100vh - 2.5em - 2.5em - 60px);
+                max-height: calc(100vh - 2.5em - 2.5em - 60px);
+            }
         }
         .msg {
             color: var(--neon-blue);
@@ -71,6 +86,23 @@
             align-items: center;
             justify-content: space-between;
             gap: 1em;
+            opacity: 0.95;
+        }
+        .msg-divider {
+            border: none;
+            border-bottom: 1.5px dotted rgba(0,240,255,0.18);
+            margin: 0.4em 0 0.4em 0;
+            height: 0;
+            width: 100%;
+            background: none;
+            pointer-events: none;
+            /* Dots spaced out using border-style and border-spacing effect */
+            border-bottom-style: dotted;
+            border-bottom-width: 1.5px;
+            border-bottom-color: rgba(0,240,255,0.18);
+            border-bottom: 1.5px dotted rgba(0,240,255,0.18);
+            /* Custom dash array for more space between dots (SVG fallback) */
+        }
         .msg-time {
             font-size: 0.92em;
             color: var(--neon-blue);
@@ -79,7 +111,6 @@
             text-shadow: 0 0 4px var(--neon-blue);
             white-space: nowrap;
             font-family: inherit;
-        }
         }
         .uuid {
             font-size: 0.85em;
@@ -104,6 +135,7 @@
             margin-right: 0.5em;
             box-shadow: 0 0 4px #00f0ff33 inset;
             transition: border 0.2s;
+            touch-action: manipulation;
         }
         #input:focus {
             border: 1.5px solid var(--neon-blue);
@@ -113,6 +145,11 @@
             border: 1.5px solid var(--neon-blue);
             background: transparent;
             transition: background 0.2s;
+            min-width: 48px;
+            min-height: 44px;
+        }
+        #send:active, #send:focus {
+            background: #00f0ff22;
         }
         #send:hover {
             background: #00f0ff11;
@@ -120,10 +157,82 @@
     </style>
 </head>
 <body>
-    <div style="position: fixed; top: 1.2em; right: 1.2em; z-index: 100; display: flex; align-items: center; gap: 0.7em;">
-        <span id="clock" style="font-family: inherit; font-size: 1.55em; color: var(--neon-blue); background: none; border: none; padding: 0; box-shadow: none; text-shadow: var(--neon-blue-glow), 0 0 8px var(--neon-blue); letter-spacing: 0.12em; user-select: none;"></span>
+    <div id="header-bar">
+        <h2>GO-RTCS WebSocket Client</h2>
+        <span id="clock"></span>
     </div>
-    <h2>GO-RTCS WebSocket Client</h2>
+    <style>
+        #header-bar {
+            width: 100vw;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+            background: var(--glass-bg);
+            border-bottom: 1.5px solid var(--glass-border);
+            box-shadow: 0 2px 24px 0 #00f0ff22;
+            padding: 0.7em 1.2em 0.7em 1.2em;
+            box-sizing: border-box;
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+        }
+        #header-bar h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            text-shadow: var(--neon-blue-glow);
+            text-align: left;
+            flex: 1 1 auto;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #clock {
+            font-family: inherit;
+            font-size: 1.3em;
+            color: var(--neon-blue);
+            background: none;
+            border: none;
+            padding: 0;
+            box-shadow: none;
+            text-shadow: var(--neon-blue-glow), 0 0 8px var(--neon-blue);
+            letter-spacing: 0.12em;
+            user-select: none;
+            margin-left: 1.2em;
+            flex-shrink: 0;
+        }
+        @media (max-width: 600px) {
+            #header-bar {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 0.5em 0.5em 0.5em 0.5em;
+                gap: 0.2em;
+            }
+            #header-bar h2 {
+                font-size: 1.05rem;
+                text-align: center;
+                margin-bottom: 0.1em;
+            }
+            #clock {
+                font-size: 1.05em;
+                margin-left: 0;
+                text-align: center;
+            }
+        }
+        body {
+            padding-top: 3.5em;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding-top: 3.1em;
+            }
+        }
+    </style>
     <div id="messages"></div>
     <div id="inputbar">
         <input type="text" id="input" placeholder="Type a message..." autofocus />
@@ -178,31 +287,31 @@
             transition: background 0.2s, border 0.2s;
             backdrop-filter: blur(6px);
             -webkit-backdrop-filter: blur(6px);
+            min-width: 48px;
+            min-height: 44px;
+        }
+        #inputbar button:active, #inputbar button:focus {
+            background: #00f0ff22;
         }
         #inputbar button:hover {
             background: #00f0ff33;
             border: 1.5px solid #fff;
         }
         @media (max-width: 600px) {
-            h2 {
-                font-size: 1.1rem;
-                margin-top: 1.2rem;
-                margin-bottom: 0.7rem;
-            }
-            #messages {
-                padding: 1em 0.3em 0.5em 0.3em;
-                font-size: 0.98em;
-            }
             #inputbar {
-                padding: 0.3em 0.3em;
+                padding: 0.2em 0.1em;
             }
             #inputbar input[type="text"] {
-                font-size: 0.98em;
+                font-size: 1em;
                 padding: 0.6em 0.7em;
+                border-radius: 6px;
             }
             #inputbar button {
-                font-size: 0.98em;
+                font-size: 1em;
                 padding: 0.6em 0.7em;
+                border-radius: 6px;
+                min-width: 44px;
+                min-height: 44px;
             }
         }
     </style>
@@ -223,6 +332,9 @@
         window.onresize = function() {
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         };
+        // Prevent iOS double-tap zoom and improve tap highlight
+        document.addEventListener('touchstart', function(){}, true);
+        document.body.style.webkitTapHighlightColor = 'rgba(0,0,0,0)';
     </script>
     <script>
     const ws = new WebSocket('ws://' + location.hostname + ':8080/ws');
@@ -238,9 +350,9 @@
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                messagesDiv.innerHTML += `<div class="msg"><span><span class="uuid">${data.SenderUUID}:</span> ${escapeHtml(data.Message)}</span><span class="msg-time">${escapeHtml(data.Time || '')}</span></div>`;
+                messagesDiv.innerHTML += `<div class="msg"><span><span class="uuid">${data.SenderUUID}:</span> ${escapeHtml(data.Message)}</span><span class="msg-time">${escapeHtml(data.Time || '')}</span></div><div class='msg-divider'></div>`;
             } catch (e) {
-                messagesDiv.innerHTML += `<div class="msg" style="color:#ff3c7d;text-shadow:0 0 4px #ff3c7d;">Invalid message: ${escapeHtml(event.data)}</div>`;
+                messagesDiv.innerHTML += `<div class="msg" style="color:#ff3c7d;text-shadow:0 0 4px #ff3c7d;">Invalid message: ${escapeHtml(event.data)}</div><div class='msg-divider'></div>`;
             }
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         };
