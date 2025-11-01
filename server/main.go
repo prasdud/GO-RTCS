@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -57,13 +58,14 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	// Track connected client
-	currentClient := r.RemoteAddr
+	//clientId := r.RemoteAddr
+	clientId := uuid.New().String()
 	clientsMutex.Lock()
-	connectedClients[currentClient] = conn
+	connectedClients[clientId] = conn
 	count := len(connectedClients)
 	clientsMutex.Unlock()
 
-	logger.Info("Client connected", "address", currentClient, "total", count)
+	logger.Info("Client connected", "address", clientId, "total", count)
 
 	for {
 		// Read message from client (blocks until message received)
