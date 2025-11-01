@@ -1,6 +1,6 @@
 # WebSocket Server Best Practices
 
-## 1. Client Identification
+## 1. DONE Client Identification
 ### Issue
 ```go
 currentClient := r.RemoteAddr // Using IP:Port as key
@@ -90,7 +90,7 @@ conn.SetPongHandler(func(string) error {
 
 ---
 
-## 4. Message Size Limits
+## 4. DONE Message Size Limits
 ### Issue
 ```go
 ReadBufferSize: 0  // Unlimited
@@ -268,36 +268,6 @@ server := &http.Server{
 - Protects against slow clients
 - Forces connection cleanup
 - Production-ready defaults
-
----
-
-## 10. Upgrader Configuration
-### Issue
-```go
-HandshakeTimeout: 100000,  // 100,000 seconds!
-ReadBufferSize:   0,
-WriteBufferSize:  0,
-```
-
-### Problem
-- 27+ hour handshake timeout is absurd
-- Zero buffers = no buffering optimization
-- Poor performance
-
-### Solution
-```go
-var upgrader = websocket.Upgrader{
-    CheckOrigin:      func(r *http.Request) bool { return true },
-    HandshakeTimeout: 10 * time.Second,
-    ReadBufferSize:   1024,
-    WriteBufferSize:  1024,
-}
-```
-
-### Why
-- Reasonable handshake window
-- Buffer pooling for efficiency
-- Industry standard values
 
 ---
 
