@@ -105,6 +105,19 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		userName = strings.TrimSpace(string(msg))
 
 		if len(userName) > 0 {
+			if connectedClients[userName] != nil {
+				logger.Warn("Username already taken", "username", userName)
+
+				userNameTakenMsg := BroadcastMessage{
+					Type:     "error",
+					UserName: "System",
+					Message:  "Username already taken. Please choose another one.",
+					Time:     time.Now().Format("15:04:05"),
+				}
+				userNameTakenBytes, _ := json.Marshal(userNameTakenMsg)
+				conn.WriteMessage(websocket.TextMessage, userNameTakenBytes)
+				continue
+			}
 			hasUserName = true
 			logger.Info("User set username", "username", userName)
 
