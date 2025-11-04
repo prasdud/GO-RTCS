@@ -41,9 +41,10 @@ var (
 
 type BroadcastMessage struct {
 	//SenderUUID string
-	UserName string
-	Message  string
-	Time     string
+	Type     string `json:"Type"` // "message", "system", "prompt"
+	UserName string `json:"UserName"`
+	Message  string `json:"Message"`
+	Time     string `json:"Time"`
 }
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
@@ -72,25 +73,57 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		conn.Close()
 	}()
 
-	clientsMutex.Lock()
+	// Username entry loop - NO LOCK NEEDED HERE
 	for !hasUserName {
-		logger.Error("Please enter username to continue")
-		prompt := "Please enter username to enter chat room: "
-		conn.WriteMessage(websocket.TextMessage, []byte(prompt))
+		logger.Info("Waiting for username from client")
 
-		_, msg, _ := conn.ReadMessage()
-		// error is being generated, ignore for now
-		// if err == nil{
-		// logger.Error("error generated", "error", err)
-		// return
-		// }
+		// Send username prompt as JSON with special type
+		promptMsg := BroadcastMessage{
+			Type:     "prompt",
+			UserName: "System",
+			Message:  "Please enter username to enter chat room:",
+			Time:     time.Now().Format("15:04:05"),
+		}
+
+		promptBytes, err := json.Marshal(promptMsg)
+		if err != nil {
+			logger.Error("Failed to marshal prompt", "error", err)
+			return
+		}
+
+		if err := conn.WriteMessage(websocket.TextMessage, promptBytes); err != nil {
+			logger.Error("Failed to send username prompt", "error", err)
+			return
+		}
+
+		_, msg, err := conn.ReadMessage()
+		if err != nil {
+			logger.Error("Failed to read username", "error", err)
+			return
+		}
+
 		userName = strings.TrimSpace(string(msg))
 
 		if len(userName) > 0 {
 			hasUserName = true
 			logger.Info("User set username", "username", userName)
+
+			// Send success message to clear prompt
+			successMsg := BroadcastMessage{
+				Type:     "success",
+				UserName: "System",
+				Message:  "Welcome, " + userName + "!",
+				Time:     time.Now().Format("15:04:05"),
+			}
+			successBytes, _ := json.Marshal(successMsg)
+			conn.WriteMessage(websocket.TextMessage, successBytes)
+		} else {
+			logger.Warn("Empty username received, prompting again")
 		}
 	}
+
+	// NOW lock only when adding to the map
+	clientsMutex.Lock()
 	// Track connected client
 	//clientId := r.RemoteAddr
 	connectedClients[userName] = conn
@@ -125,6 +158,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 		currentBroadcast := BroadcastMessage{
 			//SenderUUID: clientId,
+			Type:     "message",
 			UserName: userName,
 			Message:  msgString,
 			Time:     time.Now().Format("15:04:05"),
