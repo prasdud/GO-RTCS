@@ -350,7 +350,7 @@
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                messagesDiv.innerHTML += `<div class="msg"><span><span class="uuid">${data.SenderUUID}:</span> ${escapeHtml(data.Message)}</span><span class="msg-time">${escapeHtml(data.Time || '')}</span></div><div class='msg-divider'></div>`;
+                messagesDiv.innerHTML += `<div class="msg"><span><span class="uuid">${data.UserName}:</span> ${escapeHtml(data.Message)}</span><span class="msg-time">${escapeHtml(data.Time || '')}</span></div><div class='msg-divider'></div>`;
             } catch (e) {
                 messagesDiv.innerHTML += `<div class="msg" style="color:#ff3c7d;text-shadow:0 0 4px #ff3c7d;">Invalid message: ${escapeHtml(event.data)}</div><div class='msg-divider'></div>`;
             }

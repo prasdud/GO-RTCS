@@ -40,9 +40,10 @@ var (
 )
 
 type BroadcastMessage struct {
-	SenderUUID string
-	Message    string
-	Time       string
+	//SenderUUID string
+	UserName string
+	Message  string
+	Time     string
 }
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
@@ -51,6 +52,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Error("Upgrade error", "error", err)
 		return
 	}
+	var hasUserName bool = false
+	var userName string
 
 	const maxMessageSize = 50
 	conn.SetReadLimit(maxMessageSize)
@@ -61,7 +64,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		//logger.Info("Client disconnected", "address", clientId)
 
 		clientsMutex.Lock()
-		delete(connectedClients, clientId)
+		delete(connectedClients, userName) // chaged from UUID to userName here
 		count := len(connectedClients)
 		clientsMutex.Unlock()
 
@@ -69,14 +72,33 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		conn.Close()
 	}()
 
+	clientsMutex.Lock()
+	for !hasUserName {
+		logger.Error("Please enter username to continue")
+		prompt := "Please enter username to enter chat room: "
+		conn.WriteMessage(websocket.TextMessage, []byte(prompt))
+
+		_, msg, _ := conn.ReadMessage()
+		// error is being generated, ignore for now
+		// if err == nil{
+		// logger.Error("error generated", "error", err)
+		// return
+		// }
+		userName = strings.TrimSpace(string(msg))
+
+		if len(userName) > 0 {
+			hasUserName = true
+			logger.Info("User set username", "username", userName)
+		}
+	}
 	// Track connected client
 	//clientId := r.RemoteAddr
-	clientsMutex.Lock()
-	connectedClients[clientId] = conn
+	connectedClients[userName] = conn
+	//connectedClients[clientId] = conn
 	count := len(connectedClients)
 	clientsMutex.Unlock()
 
-	logger.Info("Client connected", "address", clientId, "total", count)
+	logger.Info("Client connected", "address", clientId, "username", userName, "total", count)
 
 	for {
 		// Read message from client (blocks until message received)
@@ -85,7 +107,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			// Check for close errors and log gracefully
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
-				logger.Error("Client disconnected", "address", clientId, "error", err)
+				logger.Error("Client disconnected", "address", clientId, "username", userName, "error", err)
 			} else {
 				logger.Info("Read error", "error", err)
 			}
@@ -102,9 +124,10 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Info("Received message", "message", strings.TrimSpace(msgString), "from", clientId)
 
 		currentBroadcast := BroadcastMessage{
-			SenderUUID: clientId,
-			Message:    msgString,
-			Time:       time.Now().Format("15:04:05"),
+			//SenderUUID: clientId,
+			UserName: userName,
+			Message:  msgString,
+			Time:     time.Now().Format("15:04:05"),
 		}
 
 		// acquire lock to broadcast message to all clients
@@ -119,6 +142,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			if err := clientConn.WriteMessage(websocket.TextMessage, msgBytes); err != nil {
 				logger.Error("Broadcast error", "error", err)
+				clientsMutex.Unlock()
 				break
 			}
 		}
