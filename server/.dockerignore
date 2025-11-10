@@ -1,0 +1,12 @@
+# Ignore binaries and build cache
+server
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+vendor/
+.git
+.gitignore
+node_modules
