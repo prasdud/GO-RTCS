@@ -5,10 +5,10 @@ A **real-time chat server** built in **Go**, where multiple users can connect an
 ---
 
 ## TODO
-- Migrate to V2
-- Add unique username logic
-- Sample dockerfile
-- Add ping / pong heartbeat
+- Establish seperation of concerns
+- Dont try to copy from frankenstein, try building it again with modular architecture in mind
+
+### LTG
 - set connection timeouts
 - add error type checking
 
