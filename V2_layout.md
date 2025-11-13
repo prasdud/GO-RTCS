@@ -1,4 +1,4 @@
-# GO-RTCS V2 - Professional Project Structure
+# GO-RTCS V2 - Frankenstein Port
 
 ## Directory Structure
 
@@ -18,12 +18,11 @@ GO-RTCS/
 │   │   ├── hub.go                     # Central hub - manages all clients & broadcast
 │   │   ├── client.go                  # Client struct & methods (read/write)
 │   │   ├── message.go                 # Message types & validation
-│   │   └── room.go                    # (Optional) Multi-room support
 │   │
-│   └── config/
-│       └── config.go                  # Configuration management
+│   └── config/                         # global config manager
+│       └── config.go
 │
-├── pkg/                               # Public reusable packages (if any)
+├── util/
 │   └── logger/
 │       └── logger.go                  # Custom logger setup
 │
@@ -31,12 +30,6 @@ GO-RTCS/
 │   └── static/
 │       └── index.html                 # Client UI
 │
-├── configs/
-│   └── config.yaml                    # Configuration file (optional)
-│
-├── scripts/
-│   ├── build.sh                       # Build scripts
-│   └── docker-entrypoint.sh           # Docker startup
 │
 ├── go.mod
 ├── go.sum
