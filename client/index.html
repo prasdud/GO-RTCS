@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>TERMINAL_UPLINK_V2</title>
@@ -11,8 +12,10 @@
         :root {
             /* Design Tokens */
             --bg-color: #0a0a0a;
-            --primary-color: #33ff00; /* Neon Green */
-            --secondary-color: #ffb000; /* Amber */
+            --primary-color: #33ff00;
+            /* Neon Green */
+            --secondary-color: #ffb000;
+            /* Amber */
             --dim-color: #1f521f;
             --error-color: #ff3333;
             --font-stack: 'JetBrains Mono', 'Fira Code', monospace;
@@ -26,7 +29,8 @@
             scrollbar-color: var(--dim-color) var(--bg-color);
         }
 
-        html, body {
+        html,
+        body {
             margin: 0;
             padding: 0;
             height: 100vh;
@@ -34,8 +38,10 @@
             background-color: var(--bg-color);
             color: var(--primary-color);
             font-family: var(--font-stack);
-            overflow: hidden; /* App-like feel */
-            font-size: 14px; /* Default terminal size */
+            overflow: hidden;
+            /* App-like feel */
+            font-size: 14px;
+            /* Default terminal size */
             line-height: 1.5;
         }
 
@@ -46,26 +52,32 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: linear-gradient(
-                to bottom,
-                rgba(255,255,255,0),
-                rgba(255,255,255,0) 50%,
-                rgba(0,0,0,0.2) 50%,
-                rgba(0,0,0,0.2)
-            );
+            background: linear-gradient(to bottom,
+                    rgba(255, 255, 255, 0),
+                    rgba(255, 255, 255, 0) 50%,
+                    rgba(0, 0, 0, 0.2) 50%,
+                    rgba(0, 0, 0, 0.2));
             background-size: 100% 4px;
             pointer-events: none;
             z-index: 9999;
             opacity: 0.6;
         }
-        
+
         /* Subtle flicker animation */
         @keyframes flicker {
-            0% { opacity: 0.97; }
-            50% { opacity: 0.99; }
-            100% { opacity: 0.98; }
+            0% {
+                opacity: 0.97;
+            }
+
+            50% {
+                opacity: 0.99;
+            }
+
+            100% {
+                opacity: 0.98;
+            }
         }
-        
+
         #app-container {
             display: flex;
             flex-direction: column;
@@ -117,10 +129,12 @@
             width: 10px;
             background: var(--bg-color);
         }
+
         ::-webkit-scrollbar-thumb {
             background: var(--dim-color);
             border: 1px solid var(--bg-color);
         }
+
         ::-webkit-scrollbar-thumb:hover {
             background: var(--primary-color);
         }
@@ -132,8 +146,10 @@
             word-wrap: break-word;
             opacity: 0.9;
         }
+
         .msg-line:hover {
-            background-color: rgba(51, 255, 0, 0.05); /* Very subtle highlight */
+            background-color: rgba(51, 255, 0, 0.05);
+            /* Very subtle highlight */
         }
 
         .timestamp {
@@ -155,10 +171,10 @@
             color: var(--dim-color);
             font-style: italic;
         }
-        
+
         .prompt-msg {
-             color: var(--secondary-color);
-             font-weight: bold;
+            color: var(--secondary-color);
+            font-weight: bold;
         }
 
         .error-msg {
@@ -191,9 +207,10 @@
             font-family: var(--font-stack);
             font-size: 1em;
             padding: 0;
-            caret-color: var(--primary-color); /* The block cursor effect is native-ish */
+            caret-color: var(--primary-color);
+            /* The block cursor effect is native-ish */
         }
-        
+
         #input::placeholder {
             color: var(--dim-color);
             opacity: 0.5;
@@ -204,21 +221,28 @@
             #app-container {
                 padding: 5px;
             }
+
             .prompt {
-                content: "$"; /* Shorten prompt on mobile if possible via CSS content replacement? actually better to just hide part of it or keep it short initially */
-                display: none; /* Hide full prompt on very small screens? No, just keep it, it wraps naturally with flex */
+                content: "$";
+                /* Shorten prompt on mobile if possible via CSS content replacement? actually better to just hide part of it or keep it short initially */
+                display: none;
+                /* Hide full prompt on very small screens? No, just keep it, it wraps naturally with flex */
             }
+
             .mobile-prompt-icon {
-                 display: inline;
+                display: inline;
             }
+
             .desktop-prompt-text {
                 display: none;
             }
         }
+
         @media (min-width: 601px) {
-             .mobile-prompt-icon {
-                 display: none;
+            .mobile-prompt-icon {
+                display: none;
             }
+
             .desktop-prompt-text {
                 display: inline;
             }
@@ -228,17 +252,20 @@
         .blink {
             animation: blinker 1s linear infinite;
         }
+
         @keyframes blinker {
-            50% { opacity: 0; }
+            50% {
+                opacity: 0;
+            }
         }
-        
+
         .hl {
             color: #fff;
             background: var(--primary-color);
         }
-
     </style>
 </head>
+
 <body>
 
     <div id="scanlines"></div>
@@ -249,7 +276,7 @@
             <div id="clock">[00:00:00]</div>
         </header>
 
-        <div id="terminal-window" id="messages">
+        <div id="terminal-window">
             <!-- Startup Sequence -->
             <div class="msg-line system-msg">Initializing connection protocol...</div>
             <div class="msg-line system-msg">Loading modules... [OK]</div>
@@ -268,7 +295,7 @@
 
     <script>
         // --- UI LOGIC ---
-        
+
         // Clock
         function updateClock() {
             const now = new Date();
@@ -284,33 +311,34 @@
         function scrollToBottom() {
             terminalWindow.scrollTop = terminalWindow.scrollHeight;
         }
-        
+
         // Keep focus on input
         const inputField = document.getElementById('input');
         // Optional: aggressively grab focus if the user clicks anywhere in the terminal
         document.addEventListener('click', (e) => {
-             // Only focus if they didn't select text
-             if (window.getSelection().toString().length === 0) {
-                 inputField.focus();
-             }
+            // Only focus if they didn't select text
+            if (window.getSelection().toString().length === 0) {
+                inputField.focus();
+            }
         });
 
         // --- WEBSOCKET LOGIC ---
-        
+
         const ws = new WebSocket('ws://' + location.hostname + ':7742/ws');
         let usernamePromptId = null;
         let awaitingUsername = false;
+        let pendingUsername = '';
 
         // Escape HTML to prevent XSS
         function escapeHtml(text) {
             return text.replace(/[&<>"']/g, function (c) {
-                return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\'':'&#39;'}[c]||c;
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', '\'': '&#39;' }[c] || c;
             });
         }
-        
+
         function getTimestamp() {
             const now = new Date();
-             const pad = n => n.toString().padStart(2, '0');
+            const pad = n => n.toString().padStart(2, '0');
             return `${pad(now.getHours())}:${pad(now.getMinutes())}`;
         }
 
@@ -321,23 +349,28 @@
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                
+
                 if (data.Type === 'prompt') {
                     awaitingUsername = true;
                     appendLog('SERVER', data.Message, 'prompt');
                     inputField.placeholder = "Enter identity...";
-                    
+
                 } else if (data.Type === 'error') {
                     appendLog('ERROR', data.Message, 'error');
-                    
+
                 } else if (data.Type === 'success') {
                     awaitingUsername = false;
                     appendLog('SUCCESS', data.Message, 'system');
                     inputField.placeholder = ""; // Clear placeholder
-                    
+
+                    if (pendingUsername) {
+                        document.querySelector('.desktop-prompt-text').textContent = `${pendingUsername}@rtcs:~$`;
+                        pendingUsername = '';
+                    }
+
                 } else if (data.Type === 'message') {
                     appendLog(data.UserName, data.Message, 'chat', data.Time);
-                    
+
                 } else {
                     // Fallback
                     appendLog('UNKNOWN', data.Message || JSON.stringify(data), 'system');
@@ -351,22 +384,22 @@
         ws.onclose = () => {
             appendLog('SYSTEM', 'Connection terminated by remote host.', 'error');
         };
-        
+
         function appendLog(user, message, type, time) {
             const line = document.createElement('div');
             line.className = 'msg-line';
-            
+
             // Format: [TIME] <USER> MESSAGE
             const timeStr = time || getTimestamp();
-            
+
             let contentHtml = `<span class="timestamp">[${timeStr}]</span>`;
-            
+
             if (type === 'system') {
-                 contentHtml += `<span class="system-msg"> *** ${escapeHtml(message)} ***</span>`;
+                contentHtml += `<span class="system-msg"> *** ${escapeHtml(message)} ***</span>`;
             } else if (type === 'error') {
-                 contentHtml += `<span class="error-msg"> [ERR] ${escapeHtml(message)}</span>`;
+                contentHtml += `<span class="error-msg"> [ERR] ${escapeHtml(message)}</span>`;
             } else if (type === 'prompt') {
-                 contentHtml += `<span class="prompt-msg"> > ${escapeHtml(message)}</span>`;
+                contentHtml += `<span class="prompt-msg"> > ${escapeHtml(message)}</span>`;
             } else {
                 // Chat or default
                 const userClass = (type === 'chat') ? 'username' : 'system-msg';
@@ -374,7 +407,7 @@
                 // Assuming server sends actual username
                 contentHtml += `<span class="${userClass}">&lt;${escapeHtml(user)}&gt;</span> <span class="separator"></span> ${escapeHtml(message)}`;
             }
-            
+
             line.innerHTML = contentHtml;
             terminalWindow.appendChild(line);
             scrollToBottom();
@@ -385,17 +418,21 @@
             if (e.key === 'Enter') {
                 const val = inputField.value;
                 if (val.trim() !== '') {
+                    if (awaitingUsername) {
+                        pendingUsername = val.trim();
+                    }
                     ws.send(val);
                     // Echoing user input immediately? 
                     // The server usually echoes back, so we might duplicate if we print here.
                     // But for "terminal feel" it's sometimes nice to see what you typed.
                     // We'll trust the server echo loop for now to avoid duplications.
                     // BUT, if it's a username entry (awaitingUsername), we definitely want to clear.
-                    
+
                     inputField.value = '';
                 }
             }
         };
     </script>
 </body>
+
 </html>
