@@ -4,14 +4,14 @@ A **real-time chat server** built in **Go**, where multiple users can connect an
 
 ---
 
-## TODO
-- Migrate to V2
-- Add unique username logic
-- Sample dockerfile
-- Add ping / pong heartbeat
-- set connection timeouts
-- add error type checking
+## Running
+- docker compose up --build
 
+## Notes
+- Initially planned for modular V2 overhaul, seems stupid now. will just keep it as is and modularize wherever needed
+
+## TODO
+- Client looks very 2000's ish, modernize !
 
 ## Potential issues
 - Broadcast Logic:
