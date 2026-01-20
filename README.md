@@ -3,7 +3,10 @@
 A **real-time chat server** built in **Go**, where multiple users can connect and exchange messages in a single chat room. The server demonstrates **Go’s concurrency features** using goroutines and channels, and supports **real-time message broadcasting** via WebSockets.
 
 ---
+# Status, Dev Notes
+Work in progres. Product works but i wanna make it better. Need to deploy. Actively working on this Jan 2026
 
+---
 ## Running
 - docker compose up --build
 
